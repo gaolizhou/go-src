@@ -76,9 +76,9 @@ func DecodeList(data []byte, index int) (BItem, int) {
 	step := 0
 	i:= index + 1
 	for ; data[i] != 'e'; i += step {
-		itm, step1 := GetDecoder(data[i])(data, i)
+		var itm BItem
+		itm, step = GetDecoder(data[i])(data, i)
 		item.list_value = append(item.list_value, itm)
-		step = step1
 	}
 	return item,i + 1 - index
 }
@@ -91,11 +91,11 @@ func DecodeDict(data []byte, index int) (BItem, int) {
 	step := 0
 	i:= index + 1
 	for ; data[i] != 'e'; i+=step {
-		key, step1 := GetDecoder(data[i])(data, i)
-		i = i + step1
-		value, step1 := GetDecoder(data[i])(data, i)
+		var key, value BItem
+		key, step = GetDecoder(data[i])(data, i)
+		i = i + step
+		value, step = GetDecoder(data[i])(data, i)
 		item.dict_value[key.string_value] = value
-		step = step1
 	}
 	return item,i + 1 - index
 }
