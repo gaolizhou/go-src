@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type ItemType int
 
 const (
@@ -17,6 +19,27 @@ type BItem struct {
 	dict_value map[string]BItem
 }
 
+type DecodeFunc func(data []byte, index int) (BItem, int)
+
+func GetDecoder(bt byte)(DecodeFunc) {
+	fun_map := map[byte]DecodeFunc {
+		'd': DecodeDict,
+		'l': DecodeList,
+		'i': DecodeInteger,
+		'0': DecodeString,
+		'1': DecodeString,
+		'2': DecodeString,
+		'3': DecodeString,
+		'4': DecodeString,
+		'5': DecodeString,
+		'6': DecodeString,
+		'7': DecodeString,
+		'8': DecodeString,
+		'9': DecodeString,
+	}
+	return fun_map[bt]
+}
+
 //i2097152e
 func DecodeInteger(data []byte, index int) (BItem, int) {
 	item := BItem{
@@ -31,86 +54,49 @@ func DecodeInteger(data []byte, index int) (BItem, int) {
 	item.int_value = int_value
 	return item, i - index + 1
 }
+
 //13:announce-list
 func DecodeString(data []byte, index int) (BItem, int) {
-	item := BItem{
+	item := BItem {
 		item_type:kString,
 	}
 	i := index
-	len := 0
+	length := 0
 	for ; data[i] != ':';i++ {
-		len = len * 10
-		len += int(data[i])-int('0')
+		length = length * 10
+		length += int(data[i])-int('0')
 	}
-	item.string_value = string(data[i+1:len+i+1])
-	return item, len+i+1 - index
+	item.string_value = string(data[i+1:length+i+1])
+	return item, length +i+1 - index
 }
-/*
-func Decode(data []byte, index int) (item BItem, bytes_consume int){
-	switch data[index] {
-	case 'd':
-
-	case 'i':
-		return decodeInteger(input);
-	case 'l':
-		return decodeList(input);
-	case '0':
-	case '1':
-	case '2':
-	case '3':
-	case '4':
-	case '5':
-	case '6':
-	case '7':
-	case '8':
-	case '9':
-		return decodeString(input);
+//ll30:http://henbt.com:2710/announceel38:udp://tracker.publicbt.com:80/announceel44:udp://tracker.openbittorrent.com:80/announceel35:udp://tracker.istole.it:80/announceel38:http://tracker.trackerfix.com/announceel31:udp://9.rarbg.com:2710/announceel29:udp://12.rarbg.me:80/announceel29:udp://10.rarbg.me:80/announceel29:udp://11.rarbg.me:80/announceel30:udp://9.rarbg.me:2710/announceee
+func DecodeList(data []byte, index int) (BItem, int) {
+	item := BItem {
+		item_type:kList,
+		list_value:make([]BItem, 0, 0),
 	}
-
-	for i:=index; ; {
-		switch data[i] {
-		case 'd':
-
-		case 'i':
-			return decodeInteger(input);
-		case 'l':
-			return decodeList(input);
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-			return decodeString(input);
-		}
+	fmt.Println("I am in DecodeList")
+	step := 0
+	i:= index + 1
+	for ; data[i] != 'e'; i += step {
+		itm, step1 := GetDecoder(data[i])(data, i)
+		item.list_value = append(item.list_value, itm)
+		step = step1
 	}
+	return item,i + 1 - index
 }
 
-func (item BItem) 	DecodeFromBytes(data []byte, index int) (len int) {
-	for i:=index; ; {
-		switch data[i] {
-		case 'd':
-
-		case 'i':
-			return decodeInteger(input);
-		case 'l':
-			return decodeList(input);
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-			return decodeString(input);
-		}
+func DecodeDict(data []byte, index int) (BItem, int) {
+	item := BItem {
+		item_type:kDict,
 	}
+	step := 0
+	i:= index + 1
+	for ; data[i] != 'e'; i+=step {
+		key, step := GetDecoder(data[i])(data, i)
+		i = i + step
+		value, step := GetDecoder(data[i])(data, i)
+		item.dict_value[key.string_value] = value
+	}
+	return item,i + 1 - index
 }
-*/
