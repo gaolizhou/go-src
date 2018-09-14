@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type ItemType int
 
 const (
@@ -75,7 +73,6 @@ func DecodeList(data []byte, index int) (BItem, int) {
 		item_type:kList,
 		list_value:make([]BItem, 0, 0),
 	}
-	fmt.Println("I am in DecodeList")
 	step := 0
 	i:= index + 1
 	for ; data[i] != 'e'; i += step {
@@ -89,14 +86,16 @@ func DecodeList(data []byte, index int) (BItem, int) {
 func DecodeDict(data []byte, index int) (BItem, int) {
 	item := BItem {
 		item_type:kDict,
+		dict_value: make(map[string]BItem),
 	}
 	step := 0
 	i:= index + 1
 	for ; data[i] != 'e'; i+=step {
-		key, step := GetDecoder(data[i])(data, i)
-		i = i + step
-		value, step := GetDecoder(data[i])(data, i)
+		key, step1 := GetDecoder(data[i])(data, i)
+		i = i + step1
+		value, step1 := GetDecoder(data[i])(data, i)
 		item.dict_value[key.string_value] = value
+		step = step1
 	}
 	return item,i + 1 - index
 }
