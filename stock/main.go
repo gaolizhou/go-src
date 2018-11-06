@@ -22,7 +22,7 @@ func MakeQuery(stock_id string) (string, error) {
 	}
 
 	url := "http://hq.sinajs.cn/list=s_";
-	if stock_id[0] == '0' {
+	if stock_id[0] == '0' || stock_id[0] == '3' {
 		url += "sz" + stock_id;
 	} else if stock_id[0] == '6' {
 		url += "sh" + stock_id;
