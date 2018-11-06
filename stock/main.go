@@ -27,7 +27,7 @@ func MakeQuery(stock_id string) (string, error) {
 	} else if stock_id[0] == '6' {
 		url += "sh" + stock_id;
 	}
-	resp, err := http.Get("http://hq.sinajs.cn/list=s_sh600030")
+	resp, err := http.Get(url);
 	if err != nil {
 		return "", err;
 	}
@@ -38,7 +38,7 @@ func MakeQuery(stock_id string) (string, error) {
 	}
 	data := string(body);
 	s := strings.Split(data, ",")
-	return s[1]+","+s[2], nil;
+	return s[1]+","+s[3], nil;
 }
 
 func main()  {
