@@ -24,8 +24,8 @@ func main() {
 	}
 	item, _ := GetDecoder(data[0])(data, 0)
 	fmt.Println(item.item_type)
-	fmt.Println(item.dict_value["comment"])
-	fmt.Println(item.dict_value["creation date"])
-	fmt.Println(item.dict_value["announce"])
+	fmt.Printf("%+v\n", item.dict_value["comment"])
+	fmt.Printf("%+v\n", item.dict_value["creation date"])
+	fmt.Printf("%+v\n", item.dict_value["announce"])
 }
 

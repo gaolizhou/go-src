@@ -16,7 +16,20 @@ type BItem struct {
 	list_value []BItem
 	dict_value map[string]BItem
 }
-
+/*
+func (this BItem) String() string {
+	switch this.item_type {
+	case kString:
+		return this.string_value;
+	case kInt:
+		return string(this.int_value);
+	case kList:
+		return this.list_value;
+	case kDict:
+		return string(this.dict_value);
+	} 
+}
+*/
 type DecodeFunc func(data []byte, index int) (BItem, int)
 
 func GetDecoder(bt byte)(DecodeFunc) {
