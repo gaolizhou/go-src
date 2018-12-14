@@ -5,6 +5,7 @@ import (
 	"debug/elf"
 	"log"
 	"fmt"
+	"strings"
 )
 
 func main()  {
@@ -35,8 +36,11 @@ func main()  {
 	log.Printf("lineno: %v\n", lineno)
 */
 	syms, _:= exe.Symbols()
-	for _, element := range syms {
-		fmt.Println(element)
+	for _, sym := range syms {
+		if (strings.Contains(sym.Name, "ErrorInjection")) {
+			fmt.Print(sym.Name + "=")
+			fmt.Println(sym.Value)
+		}
 	}
 
 }
