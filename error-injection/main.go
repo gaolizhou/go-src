@@ -4,7 +4,6 @@ import (
 	"flag"
 	"debug/elf"
 	"log"
-	"debug/gosym"
 	"fmt"
 )
 
