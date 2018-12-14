@@ -70,7 +70,7 @@ func clearBreakpoint(pid int, breakpoint uintptr, original []byte) {
 	}
 }
 
-func DoErrorInjection(tid int, funAddr uintptr, op_code uint, not_submit bool, sct uint) (err error) {
+func DoErrorInjection(tid int, funAddr uintptr, op_code uint, not_submit bool, sct uint, cnt uint) (err error) {
 	err = syscall.PtraceAttach(tid);
 	if err != nil {
 		log.Fatal(err)
@@ -110,6 +110,7 @@ func DoErrorInjection(tid int, funAddr uintptr, op_code uint, not_submit bool, s
 		regs.Rcx = 0
 	}
 	regs.R8 = (uint64)(sct)
+	regs.R9 = (uint64)(cnt)
 	err = syscall.PtraceSetRegs(tid, &regs)
 	if err != nil {
 		log.Fatal(err)
@@ -125,6 +126,7 @@ func main()  {
 	op_code := flag.Uint("op_code", 2, "op_code")
 	not_submit := flag.Bool("not_submit", false, "not_submit")
 	sct := flag.Uint("sct", 2, "sct")
+	cnt := flag.Uint("cnt", 1, "cnt")
 
 	flag.Parse();
 
@@ -135,7 +137,7 @@ func main()  {
 	tid, err := GetRdmaWorkerTid(*chunk_pid)
 	log.Println("RdmaWorker Tid =" + strconv.Itoa(tid))
 
-	err = DoErrorInjection(tid, funAddr, *op_code, *not_submit, *sct);
+	err = DoErrorInjection(tid, funAddr, *op_code, *not_submit, *sct, *cnt);
 
 	if err != nil {
 		log.Println("ErrorInjection Failed!")
