@@ -15,6 +15,7 @@ func main()  {
 	if err != nil {
 		log.Fatal(err)
 	}
+	/*
 	var pclndat []byte
 	if sec := exe.Section(".gopclntab"); sec != nil {
 		pclndat, err = sec.Data()
@@ -33,7 +34,7 @@ func main()  {
 	filename, lineno, _ := symTab.PCToLine(sym.Entry)
 	log.Printf("filename: %v\n", filename)
 	log.Printf("lineno: %v\n", lineno)
-
+*/
 	syms, _:= exe.Symbols()
 	for _, element := range syms {
 		fmt.Println(element)
