@@ -6,41 +6,129 @@ import (
 	"log"
 	"fmt"
 	"strings"
+	"syscall"
+	"io/ioutil"
+	"strconv"
 )
 
-func main()  {
-	flag.Parse()
-	path := flag.Arg(0)
-	exe, err := elf.Open(path)
+func GetRdmaWorkerTid(chunk_pid int) (tid int, err error) {
+
+	files, err := ioutil.ReadDir("/proc/"+strconv.Itoa(chunk_pid)+"/task")
 	if err != nil {
 		log.Fatal(err)
 	}
-	/*
-	var pclndat []byte
-	if sec := exe.Section(".gopclntab"); sec != nil {
-		pclndat, err = sec.Data()
-		if err != nil {
-			log.Fatalf("Cannot read .gopclntab section: %v", err)
-		}
+
+	for _, f := range files {
+		fmt.Println(f.Name())
 	}
-	sec := exe.Section(".gosymtab")
-	symTabRaw, err := sec.Data()
-	pcln := gosym.NewLineTable(pclndat, exe.Section(".text").Addr)
-	symTab, err := gosym.NewTable(symTabRaw, pcln)
+
+	return tid, nil;
+}
+
+func GetErrorInjectionFunAddr(exePath string) (funAddr uintptr, err error){
+	exe, err := elf.Open(exePath);
 	if err != nil {
-		log.Fatal("Cannot create symbol table: %v", err)
+		log.Fatal(err)
+		return 0, err
 	}
-	sym := symTab.LookupFunc("main.main")
-	filename, lineno, _ := symTab.PCToLine(sym.Entry)
-	log.Printf("filename: %v\n", filename)
-	log.Printf("lineno: %v\n", lineno)
-*/
 	syms, _:= exe.Symbols()
 	for _, sym := range syms {
 		if (strings.Contains(sym.Name, "ErrorInjection")) {
 			fmt.Print(sym.Name + "=")
 			fmt.Println(sym.Value)
+			funAddr = (uintptr)(sym.Value)
 		}
+	}
+	return funAddr, nil;
+}
+
+func setBreakpoint(pid int, breakpoint uintptr) []byte {
+	original := make([]byte, 1)
+	_, err := syscall.PtracePeekData(pid, breakpoint, original)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = syscall.PtracePokeData(pid, breakpoint, []byte{0xCC})
+	if err != nil {
+		log.Fatal(err)
+	}
+	return original
+}
+func clearBreakpoint(pid int, breakpoint uintptr, original []byte) {
+	_, err := syscall.PtracePokeData(pid, breakpoint, original)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func DoErrorInjection(tid int, funAddr uintptr, op_code uint, not_submit bool, sct uint) (err error) {
+	err = syscall.PtraceAttach(tid);
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	var ws syscall.WaitStatus
+	wpid, err := syscall.Wait4(tid, &ws, syscall.WALL, nil)
+	if wpid == -1 {
+		log.Fatal(err)
+		return err
+	}
+	if ws.Exited() {
+		return nil
+	}
+	orig_code := setBreakpoint(tid, funAddr)
+
+	err = syscall.PtraceCont(tid, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = syscall.Wait4(tid, &ws, syscall.WALL, nil)
+	clearBreakpoint(tid, funAddr, orig_code)
+
+	var regs syscall.PtraceRegs
+	err = syscall.PtraceGetRegs(tid, &regs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//rdi, rsi, rdx, rcx, r8, r9
+	regs.Rsi = 1
+	regs.Rdx = (uint64)(op_code)
+	if not_submit {
+		regs.Rcx = 1
+	} else {
+		regs.Rcx = 0
+	}
+	regs.R8 = (uint64)(sct)
+	err = syscall.PtraceSetRegs(tid, &regs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	syscall.PtraceDetach(tid)
+
+	return nil
+}
+
+// <pid>  uint8_t op_code, bool not_submit, uint8_t sct,
+func main()  {
+	chunk_pid := flag.Int("pid", 0, "chunk pid")
+	op_code := flag.Uint("op_code", 2, "op_code")
+	not_submit := flag.Bool("not_submit", false, "not_submit")
+	sct := flag.Uint("sct", 2, "sct")
+
+	flag.Parse();
+
+	funAddr, err := GetErrorInjectionFunAddr("/proc/"+strconv.Itoa(*chunk_pid)+"/exe");
+	if err != nil {
+		return;
+	}
+	tid, err := GetRdmaWorkerTid(*chunk_pid)
+
+	err = DoErrorInjection(tid, funAddr, *op_code, *not_submit, *sct);
+
+	if err != nil {
+		log.Println("ErrorInjection Failed!")
+	} else{
+		log.Println("ErrorInjection Sucessfully!")
 	}
 
 }
