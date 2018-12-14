@@ -26,8 +26,9 @@ func GetRdmaWorkerTid(chunk_pid int) (tid int, err error) {
 		if err != nil {
 			log.Fatal("Error in reading " + statusFile)
 		}
-		strings.Contains(string(data), "rdma-worker")
-		return strconv.Atoi(f.Name())
+		if(strings.Contains(string(data), "rdma-worker")) {
+			return strconv.Atoi(f.Name())
+		}
 	}
 
 	return 0, nil;
