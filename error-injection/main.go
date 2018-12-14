@@ -21,6 +21,7 @@ func GetRdmaWorkerTid(chunk_pid int) (tid int, err error) {
 
 	for _, f := range files {
 		statusFile := taskPath + "/" + f.Name() + "/status"
+		log.Println("statusFile=" + statusFile)
 		data, err := ioutil.ReadFile(statusFile)
 		if err != nil {
 			log.Fatal("Error in reading " + statusFile)
@@ -129,7 +130,7 @@ func main()  {
 		return;
 	}
 	tid, err := GetRdmaWorkerTid(*chunk_pid)
-	log.Println("RdmaWorker Tid = %d", tid)
+	log.Println("RdmaWorker Tid =" + strconv.Itoa(tid))
 
 	err = DoErrorInjection(tid, funAddr, *op_code, *not_submit, *sct);
 
