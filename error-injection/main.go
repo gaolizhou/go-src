@@ -13,16 +13,23 @@ import (
 
 func GetRdmaWorkerTid(chunk_pid int) (tid int, err error) {
 
-	files, err := ioutil.ReadDir("/proc/"+strconv.Itoa(chunk_pid)+"/task")
+	taskPath := "/proc/"+strconv.Itoa(chunk_pid)+"/task"
+	files, err := ioutil.ReadDir(taskPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, f := range files {
-		fmt.Println(f.Name())
+		statusFile := taskPath + "/" + f.Name() + "/status"
+		data, err := ioutil.ReadFile(statusFile)
+		if err != nil {
+			log.Fatal("Error in reading " + statusFile)
+		}
+		strings.Contains(string(data), "rdma-worker")
+		return strconv.Atoi(f.Name())
 	}
 
-	return tid, nil;
+	return 0, nil;
 }
 
 func GetErrorInjectionFunAddr(exePath string) (funAddr uintptr, err error){
@@ -122,6 +129,7 @@ func main()  {
 		return;
 	}
 	tid, err := GetRdmaWorkerTid(*chunk_pid)
+	log.Println("RdmaWorker Tid = %d", tid)
 
 	err = DoErrorInjection(tid, funAddr, *op_code, *not_submit, *sct);
 
