@@ -99,6 +99,8 @@ func DoErrorInjection(tid int, funAddr uintptr, op_code uint, not_submit bool, s
 	if err != nil {
 		log.Fatal(err)
 	}
+	regs.Rip = uint64(funAddr);
+
 	//rdi, rsi, rdx, rcx, r8, r9
 	regs.Rsi = 1
 	regs.Rdx = (uint64)(op_code)
